@@ -24,6 +24,7 @@ def _validate_config(cfg):
         "paths.checkpoint_file": str,
         "openalex.api_base_url": str,
         "openalex.s3_base_url": str,
+        "openalex.download.run_mode": str,
         "openalex.download.manifest_name": str,
         "openalex.download.max_files_per_dataset": (int, type(None)),
         "http.timeout_seconds": int,
@@ -61,6 +62,10 @@ def _validate_config(cfg):
             raise ValueError(
                 f"Type invalide pour '{key_path}' : attendu {type_name}, recu {type(value).__name__}"
             )
+
+    run_mode = _get_key(cfg, "openalex.download.run_mode")
+    if run_mode not in ("fresh", "resume"):
+        raise ValueError("Valeur invalide pour 'openalex.download.run_mode' : attendu 'fresh' ou 'resume'")
 
 
 def load_config(config_path="config/default.yaml"):

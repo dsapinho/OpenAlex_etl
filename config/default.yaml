@@ -45,6 +45,10 @@ openalex:
 
   # Parametres de telechargement des snapshots
   download:
+    # Mode d'execution du telechargement:
+    # - fresh  : demarre un nouveau run (checkpoint reinitialise)
+    # - resume : reprend depuis le checkpoint existant
+    run_mode: "fresh"
     # Limite de fichiers par dataset pour les tests (null = pas de limite)
     max_files_per_dataset: null
     # Nom du fichier manifeste OpenAlex

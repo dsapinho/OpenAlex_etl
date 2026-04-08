@@ -30,13 +30,13 @@ def cp_url(url, file="", mode="w", copy=False, ret=False, prt=False):
 cfg = load_config()
 HTTP_SESSION = get_http_session()
 RUN_LOGGER = RunLogger("OpenAlex_GetSnap_20241231")
-CKPT = load_checkpoint()
 
 url = cfg["openalex"]["s3_base_url"]
 path = cfg["paths"]["download_root"]
 files_subdir = cfg["paths"]["download_files_subdir"]
 load_log_file = cfg["paths"]["load_log_file"]
 lst_data = cfg["openalex"]["snapshot_datasets"]
+run_mode = cfg["openalex"]["download"]["run_mode"]
 manifest_name = cfg["openalex"]["download"]["manifest_name"]
 max_files_per_dataset = cfg["openalex"]["download"]["max_files_per_dataset"]
 
@@ -47,10 +47,18 @@ t0 = ti.strftime("%H:%M:%S", ti.gmtime())
 with open(load_log_file, "w") as f:
     f.write(f"Heure de lancement : {t0}\n")
 
+if run_mode == "fresh":
+    CKPT = {}
+    save_checkpoint(CKPT)
+elif run_mode == "resume":
+    CKPT = load_checkpoint()
+else:
+    raise ValueError("run_mode invalide: utiliser 'fresh' ou 'resume'")
+
 CKPT.setdefault("snapshot_download", {})
 CKPT["snapshot_download"].setdefault("datasets", {})
 
-RUN_LOGGER.info("run_start", {"datasets": lst_data, "output_root": path})
+RUN_LOGGER.info("run_start", {"datasets": lst_data, "output_root": path, "run_mode": run_mode})
 
 try:
     for l in lst_data:

@@ -10,8 +10,8 @@ def get_r(elt,val=None,default=None):
         if not isinstance(elt,dict) and isinstance(val,(list,tuple)):
             val=[len(elt)] if len(val)==0 else val
             val=slice(*val)
-        try:eltout=elt[val] 
-        except:eltout=default
+        try:eltout=elt[val]
+        except (KeyError, IndexError, TypeError):eltout=default
     return eltout
 
 def recurs_list(srclist,key,nb_recurs=1):
@@ -183,7 +183,9 @@ def sub_list(lst,nb=0,nelts=0):
 
 def create_tables(table,lst_paths,tabref="",connex=""):
     import sys
-    sys.path.append(r"P:\Espace Equipe Stat\davsa\Fonctions\Embeded_SQL\src")
+    from config_loader import load_config
+    cfg=load_config()
+    sys.path.append(cfg["oracle"]["embedded_sql_src_path"])
     import sql_admin as sa
     sa.sql_create(table,"l",lstv_form(lst_paths),connex=connex,run=True)
     if not tabref=="":
@@ -191,7 +193,9 @@ def create_tables(table,lst_paths,tabref="",connex=""):
 
 def create_index(table,connex=""):
     import sys
-    sys.path.append(r"P:\Espace Equipe Stat\davsa\Fonctions\Embeded_SQL\src")
+    from config_loader import load_config
+    cfg=load_config()
+    sys.path.append(cfg["oracle"]["embedded_sql_src_path"])
     import sql_admin as sa
     sa.sql_index(table,"01",["ID"],connex=connex,run=True)
 

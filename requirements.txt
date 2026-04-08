@@ -1,0 +1,4 @@
+requests
+cx_Oracle
+pymongo
+pyyaml

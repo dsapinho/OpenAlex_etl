@@ -1,0 +1,138 @@
+# Configuration centrale du projet
+
+# Informations generales du projet/environnement d'execution
+project:
+  name: "OpenAlex_etl"
+  environment: "dev"
+
+# Chemins locaux utilises par les scripts (entree/sortie/logs/checkpoints)
+paths:
+  # Dossier racine de telechargement des snapshots OpenAlex
+  download_root: "./data/"
+  # Sous-dossier contenant les fichiers .gz telecharges
+  download_files_subdir: "files/"
+  # Fichier de log produit pendant le telechargement
+  load_log_file: "load_files.log"
+
+  # Dossier source lu par le script d'ingestion snapshot
+  snapshot_source_dir: "P:\\Espace Commun\\OpenAlex_snap\\snapshot\\20241231\\files"
+
+  # Dossier cible pour des logs d'execution plus detailles
+  run_log_dir: "./logs/"
+  # Fichier de checkpoint pour reprise apres interruption
+  checkpoint_file: "./checkpoints/snapshot_state.json"
+
+# Parametres globaux OpenAlex (API et stockage S3)
+openalex:
+  # URL de base de l'API OpenAlex
+  api_base_url: "https://api.openalex.org/"
+  # URL de base du bucket S3 OpenAlex
+  s3_base_url: "https://openalex.s3.amazonaws.com/"
+
+  # Types d'entites a telecharger dans les snapshots
+  snapshot_datasets:
+    - "works"
+    - "authors"
+    - "institutions"
+    - "topics"
+    - "fields"
+    - "subfields"
+    - "concepts"
+    - "domains"
+    - "funders"
+    - "publishers"
+    - "sources"
+
+  # Parametres de telechargement des snapshots
+  download:
+    # Limite de fichiers par dataset pour les tests (null = pas de limite)
+    max_files_per_dataset: null
+    # Nom du fichier manifeste OpenAlex
+    manifest_name: "manifest"
+
+# Parametres HTTP communs
+http:
+  # Delai maximal (en secondes) pour chaque requete HTTP
+  timeout_seconds: 60
+  # Nombre maximal de tentatives (requete initiale + retries)
+  max_retries: 5
+  # Coefficient de backoff exponentiel entre retries
+  backoff_factor: 1.0
+  # Codes HTTP consideres comme transitoires (retry)
+  retry_statuses: [429, 500, 502, 503, 504]
+  # Methodes HTTP autorisees pour retry
+  retry_methods: ["GET", "HEAD", "OPTIONS"]
+  # User-Agent envoye dans les appels HTTP
+  user_agent: "OpenAlex_etl/1.0"
+
+# Parametres d'extraction OpenAlex API (script OpenAlex_ReadApi_wks_grants_ERC.py)
+api_extract:
+  # Mode de retour de la fonction extract_OpenAlex ("req" ou "res")
+  typeres: "res"
+  # Entite API cible
+  base: "works"
+  # Parametres de requete API
+  params:
+    # Filtre funder utilise pour le perimetre ERC/Horizon
+    filter:
+      funders.id: "F4320338453|F4320338335|F4320338352"
+    # Champs retournes par l'API
+    select: "id,funders,updated_date"
+    # Taille de page
+    per_page: "200"
+    # Pagination par curseur ("*" pour tout lire)
+    cursor: "*"
+
+# Parametres d'ingestion du snapshot dans la base cible
+snapshot_ingest:
+  # Prefixe de fichiers a traiter (ex: works_*.gz)
+  file_prefix: "works"
+  # Taille des lots pour multiprocessing
+  npool: 60
+  # Tables cibles pour les donnees et la table de reference par fichier
+  tables:
+    data_table: "WORKS_SNAP_20241231"
+    ref_table: "WORKS_REF_NOMFIC_20241231"
+
+  # Prefixes a retirer lors de la normalisation des valeurs
+  value_prefixes:
+    id: "https://openalex.org/"
+    support_id: "https://openalex.org/"
+    doi: "https://doi.org/"
+    orcid: "https://orcid.org/"
+    ror: "https://ror.org/"
+    wikidata: "https://www.wikidata.org/wiki/"
+    pmid: "https://pubmed.ncbi.nlm.nih.gov/"
+
+  # Limites de longueur pour certains champs texte
+  value_limits:
+    title: 4000
+    support_title: 4000
+
+# Parametres Oracle (connexion et objets SQL)
+oracle:
+  # Connexion Oracle pour le script API
+  connection_api: "XXX"
+  # Connexion Oracle pour le script snapshot
+  connection_snapshot: "XXXX"
+
+  # Chemin vers le module SQL embarque
+  embedded_sql_src_path: "P:\\Espace Equipe Stat\\davsa\\Fonctions\\Embeded_SQL\\src"
+
+  # Definition de la table API et de la requete d'insertion associee
+  api_table:
+    # Nom de table cible pour l'extraction API
+    name: "WORKS_GRANTS_ERC_API_20250123"
+    # Colonnes SQL creees pour cette table
+    create_columns:
+      - "ID VARCHAR2(50 CHAR)"
+      - "FUNDER_ID VARCHAR2(50 CHAR)"
+      - "AWARD_ID VARCHAR2(500 CHAR)"
+      - "UPDATED_DATE VARCHAR2(50 CHAR)"
+    # Requete SQL d'insertion ligne a ligne
+    insert_sql: "INSERT INTO WORKS_GRANTS_ERC_API_20250123 VALUES (:id,:funder_id,:award_id,:updated_date)"
+
+# Parametres generaux d'execution
+runtime:
+  # Active/desactive les messages d'information a l'ecran
+  print_messages: true
